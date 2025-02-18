@@ -1,5 +1,6 @@
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -10,9 +11,6 @@ from .serializers import SigninSerializer, SignupSerializer
 
 # Create your views here.
 
-def page404NotFound(request, exception):
-    return render(request, '404.html', status=404)
-
 
 class SigninView(APIView):
     permission_classes = [AllowAny]
@@ -21,18 +19,28 @@ class SigninView(APIView):
     def post(self, request):
         serializer = SigninSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.validated_data["user"]
-            login(request, user)
-            # Generate JWT token
-            refresh = RefreshToken.for_user(user)
+            username = serializer.validated_data.get("username")
+            password = serializer.validated_data.get("password")
 
-            return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                'id': user.id,
-                'username': user.username,
-            }, status=status.HTTP_200_OK)
-        return Response({"status": "Failed"}, status=status.HTTP_400_BAD_REQUEST)
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                refresh = RefreshToken.for_user(user)
+
+                return Response({
+                    "status": "Login berhasil",
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    "id": user.id,
+                    "username": user.username,
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({"status": "Password salah atau akun tidak ditemukan"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"status": "Validasi data gagal"}, status=status.HTTP_400_BAD_REQUEST)
+
+def page404NotFound(request, exception):
+    return render(request, '404.html', status=404)
+
 
 
 class SignupView(APIView):

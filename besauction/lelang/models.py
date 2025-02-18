@@ -1,5 +1,6 @@
 from django.db import models
 import random
+from akun.models import Pengguna
 
 class BarangLelang(models.Model):
     kode = models.CharField(editable=False, max_length=25, unique=True, primary_key=True, null=False)
@@ -11,7 +12,7 @@ class BarangLelang(models.Model):
     gambar = models.ImageField(upload_to='gambar_lelang/', null=True, blank=True)
     lelang_dibuka = models.DateTimeField(null=False)
     lelang_ditutup = models.DateTimeField(null=False)
-    penjual = models.CharField(max_length=255)
+    penjual = models.ForeignKey(Pengguna, on_delete=models.CASCADE, related_name="barang_lelang")
 
     def save(self, *args, **kwargs):
         if not self.kode:

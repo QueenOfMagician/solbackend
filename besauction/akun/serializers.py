@@ -7,15 +7,6 @@ class SigninSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=255)
     password = serializers.CharField(max_length=255, required=True, write_only=True)
 
-    def validate(self, data):
-        username = data.get("username")
-        password = data.get("password")
-        user = authenticate(username=username, password=password)
-        if user is None:
-            raise serializers.ValidationError("Tidak Ada Username/Password")
-        data["user"] = user
-        return data
-
 class SignupSerializer(serializers.ModelSerializer):
     password1 = serializers.CharField(max_length=255, write_only=True)
     password2 = serializers.CharField(max_length=255, write_only=True)

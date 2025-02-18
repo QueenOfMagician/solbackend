@@ -69,7 +69,7 @@ def broadcast_update(item):
                     "gambar": item.gambar.url if item.gambar else None,
                     "lelang_dibuka": item.lelang_dibuka.isoformat(),
                     "lelang_ditutup": item.lelang_ditutup.isoformat(),
-                    "penjual": item.penjual,
+                    "penjual": item.penjual.id,
                 }
             }
         }

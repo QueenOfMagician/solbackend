@@ -1,6 +1,7 @@
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from .consumers import broadcast_update
-from .serializers import BarangSerializers, BidSerializer, RiwayatBidSerializers, TambahBarangSerializers
+from .serializers import BarangSerializers, BidSerializer, RiwayatBidSerializers, TambahBarangSerializers, \
+    BarangSayaSerializers, PesananSayaSerializers
 from rest_framework.views import APIView
 from rest_framework import generics, status
 from django.shortcuts import get_object_or_404
@@ -9,6 +10,7 @@ from channels.layers import get_channel_layer
 from django.utils import timezone
 from rest_framework.response import Response
 from .models import BarangLelang, TransaksiLelang
+from django.db.models import Max, Subquery, OuterRef, Exists
 from fuzzywuzzy import process
 # Create your views here.
 
@@ -17,6 +19,28 @@ class BarangViews(APIView):
     def get(self, request, *args, **kwargs):
         barang = BarangLelang.objects.all()
         serializer = BarangSerializers(barang, many=True)
+        return Response(serializer.data)
+
+class BarangSayaViews(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        barang = BarangLelang.objects.filter(penjual=self.request.user)
+        serializer = BarangSayaSerializers(barang, many=True)
+        return Response(serializer.data)
+
+
+class PesananSayaViews(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # Ambil barang lelang yang memiliki transaksi oleh user
+        barang_lelang = BarangLelang.objects.filter(
+            Exists(
+                TransaksiLelang.objects.filter(barang=OuterRef("pk"), pelelang=user.username)
+            )
+        )
+        serializer = PesananSayaSerializers(barang_lelang, many=True, context={"request": request})
         return Response(serializer.data)
 
 class RiwayatLelangView(APIView):
